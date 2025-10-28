@@ -30,6 +30,7 @@ type aclEngine struct {
 
 type OutboundEntry struct {
 	Name     string
+	BindUser string
 	Outbound PluggableOutbound
 }
 
@@ -100,22 +101,22 @@ func (a *aclEngine) handle(reqAddr *AddrEx, proto acl.Protocol) PluggableOutboun
 	return ob
 }
 
-func (a *aclEngine) TCP(reqAddr *AddrEx) (net.Conn, error) {
+func (a *aclEngine) TCP(reqAddr *AddrEx, userID string) (net.Conn, error) {
 	ob := a.handle(reqAddr, acl.ProtocolTCP)
-	return ob.TCP(reqAddr)
+	return ob.TCP(reqAddr, userID)
 }
 
-func (a *aclEngine) UDP(reqAddr *AddrEx) (UDPConn, error) {
+func (a *aclEngine) UDP(reqAddr *AddrEx, userID string) (UDPConn, error) {
 	ob := a.handle(reqAddr, acl.ProtocolUDP)
-	return ob.UDP(reqAddr)
+	return ob.UDP(reqAddr, userID)
 }
 
 type aclRejectOutbound struct{}
 
-func (a *aclRejectOutbound) TCP(reqAddr *AddrEx) (net.Conn, error) {
+func (a *aclRejectOutbound) TCP(reqAddr *AddrEx, userID string) (net.Conn, error) {
 	return nil, errRejected
 }
 
-func (a *aclRejectOutbound) UDP(reqAddr *AddrEx) (UDPConn, error) {
+func (a *aclRejectOutbound) UDP(reqAddr *AddrEx, userID string) (UDPConn, error) {
 	return nil, errRejected
 }

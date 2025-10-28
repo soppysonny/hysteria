@@ -23,14 +23,14 @@ func NewSpeedtestHandler(next PluggableOutbound) PluggableOutbound {
 	}
 }
 
-func (s *speedtestHandler) TCP(reqAddr *AddrEx) (net.Conn, error) {
+func (s *speedtestHandler) TCP(reqAddr *AddrEx, userID string) (net.Conn, error) {
 	if reqAddr.Host == SpeedtestDest {
 		return speedtest.NewServerConn(), nil
 	} else {
-		return s.Next.TCP(reqAddr)
+		return s.Next.TCP(reqAddr, userID)
 	}
 }
 
-func (s *speedtestHandler) UDP(reqAddr *AddrEx) (UDPConn, error) {
-	return s.Next.UDP(reqAddr)
+func (s *speedtestHandler) UDP(reqAddr *AddrEx, userID string) (UDPConn, error) {
+	return s.Next.UDP(reqAddr, userID)
 }

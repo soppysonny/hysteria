@@ -133,9 +133,10 @@ type RequestHook interface {
 // Although UDP includes a reqAddr, the implementation does not necessarily have to use it
 // to make a "connected" UDP connection that does not accept packets from other addresses.
 // In fact, the default implementation simply uses net.ListenUDP for a "full-cone" behavior.
+// The userID parameter is the authenticated user ID, which can be used for user-based routing.
 type Outbound interface {
-	TCP(reqAddr string) (net.Conn, error)
-	UDP(reqAddr string) (UDPConn, error)
+	TCP(reqAddr string, userID string) (net.Conn, error)
+	UDP(reqAddr string, userID string) (UDPConn, error)
 }
 
 // UDPConn is like net.PacketConn, but uses string for addresses.
@@ -151,11 +152,11 @@ var defaultOutboundDialer = net.Dialer{
 	Timeout: 10 * time.Second,
 }
 
-func (o *defaultOutbound) TCP(reqAddr string) (net.Conn, error) {
+func (o *defaultOutbound) TCP(reqAddr string, userID string) (net.Conn, error) {
 	return defaultOutboundDialer.Dial("tcp", reqAddr)
 }
 
-func (o *defaultOutbound) UDP(reqAddr string) (UDPConn, error) {
+func (o *defaultOutbound) UDP(reqAddr string, userID string) (UDPConn, error) {
 	conn, err := net.ListenUDP("udp", nil)
 	if err != nil {
 		return nil, err

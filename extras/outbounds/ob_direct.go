@@ -195,7 +195,7 @@ func (d *directOutbound) resolve(reqAddr *AddrEx) {
 	reqAddr.ResolveInfo = r
 }
 
-func (d *directOutbound) TCP(reqAddr *AddrEx) (net.Conn, error) {
+func (d *directOutbound) TCP(reqAddr *AddrEx, userID string) (net.Conn, error) {
 	if reqAddr.ResolveInfo == nil {
 		// AddrEx.ResolveInfo is nil (no resolver in the pipeline),
 		// we need to resolve the address ourselves.
@@ -402,7 +402,7 @@ func (u *directOutboundUDPConn) Close() error {
 	return u.UDPConn.Close()
 }
 
-func (d *directOutbound) UDP(reqAddr *AddrEx) (UDPConn, error) {
+func (d *directOutbound) UDP(reqAddr *AddrEx, userID string) (UDPConn, error) {
 	if d.BindIP4 == nil && d.BindIP6 == nil {
 		// No bind address specified, use default dual stack implementation
 		c, err := net.ListenUDP("udp", nil)

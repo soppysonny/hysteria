@@ -271,7 +271,7 @@ func (h *h3sHandler) handleTCPRequest(stream *utils.QStream) {
 	}
 	// Dial target
 	streamStats.State.Store(StreamStateConnecting)
-	tConn, err := h.config.Outbound.TCP(reqAddr)
+	tConn, err := h.config.Outbound.TCP(reqAddr, h.authID)
 	if err != nil {
 		if !hooked {
 			_ = protocol.WriteTCPResponse(stream, false, err.Error())
@@ -379,7 +379,7 @@ func (io *udpIOImpl) Hook(data []byte, reqAddr *string) error {
 }
 
 func (io *udpIOImpl) UDP(reqAddr string) (UDPConn, error) {
-	return io.Outbound.UDP(reqAddr)
+	return io.Outbound.UDP(reqAddr, io.AuthID)
 }
 
 type udpEventLoggerImpl struct {

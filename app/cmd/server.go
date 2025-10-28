@@ -221,11 +221,12 @@ type serverConfigOutboundHTTP struct {
 }
 
 type serverConfigOutboundEntry struct {
-	Name   string                     `mapstructure:"name"`
-	Type   string                     `mapstructure:"type"`
-	Direct serverConfigOutboundDirect `mapstructure:"direct"`
-	SOCKS5 serverConfigOutboundSOCKS5 `mapstructure:"socks5"`
-	HTTP   serverConfigOutboundHTTP   `mapstructure:"http"`
+	Name     string                     `mapstructure:"name"`
+	Type     string                     `mapstructure:"type"`
+	BindUser string                     `mapstructure:"bindUser"`
+	Direct   serverConfigOutboundDirect `mapstructure:"direct"`
+	SOCKS5   serverConfigOutboundSOCKS5 `mapstructure:"socks5"`
+	HTTP     serverConfigOutboundHTTP   `mapstructure:"http"`
 }
 
 type serverConfigTrafficStats struct {
@@ -643,11 +644,46 @@ func (c *serverConfig) fillOutboundConfig(hyConfig *server.Config) error {
 			if err != nil {
 				return err
 			}
-			obs[i] = outbounds.OutboundEntry{Name: entry.Name, Outbound: ob}
+			obs[i] = outbounds.OutboundEntry{Name: entry.Name, BindUser: entry.BindUser, Outbound: ob}
 		}
 	}
 
 	var uOb outbounds.PluggableOutbound // "unified" outbound
+
+	// Check if we need user-based routing
+	hasUserRouting := false
+	for _, entry := range obs {
+		if entry.BindUser != "" {
+			hasUserRouting = true
+			break
+		}
+	}
+
+	// User-based routing layer
+	// If any outbound has BindUser set, we wrap everything in a user router
+	if hasUserRouting {
+		// Build user routing entries
+		var userEntries []outbounds.UserOutboundEntry
+		var defaultOb outbounds.PluggableOutbound
+		for _, entry := range obs {
+			if entry.BindUser != "" {
+				userEntries = append(userEntries, outbounds.UserOutboundEntry{
+					BindUser: entry.BindUser,
+					Outbound: entry.Outbound,
+				})
+			}
+			// First outbound or one named "default" becomes the default
+			if defaultOb == nil || strings.ToLower(entry.Name) == "default" {
+				defaultOb = entry.Outbound
+			}
+		}
+		// Wrap the user router around ACL (if exists) or the default outbound
+		// This means: UserRouter -> ACL -> Outbound
+		// So ACL rules apply within each user's selected outbound
+		uOb = outbounds.NewUserRouter(userEntries, defaultOb)
+		// Note: ACL will be applied INSIDE the user router, per outbound
+		// This is intentional - each user's outbound can have different behavior
+	}
 
 	// ACL
 	hasACL := false
@@ -667,24 +703,30 @@ func (c *serverConfig) fillOutboundConfig(hyConfig *server.Config) error {
 		if err != nil {
 			return configError{Field: "acl.file", Err: err}
 		}
-		uOb = acl
+		// If user routing is enabled, ACL was already handled
+		if !hasUserRouting {
+			uOb = acl
+		}
 	} else if len(c.ACL.Inline) > 0 {
 		hasACL = true
 		acl, err := outbounds.NewACLEngineFromString(strings.Join(c.ACL.Inline, "\n"), obs, gLoader)
 		if err != nil {
 			return configError{Field: "acl.inline", Err: err}
 		}
-		uOb = acl
-	} else {
-		// No ACL, use the first outbound
+		// If user routing is enabled, ACL was already handled
+		if !hasUserRouting {
+			uOb = acl
+		}
+	} else if !hasUserRouting {
+		// No ACL and no user routing, use the first outbound
 		uOb = obs[0].Outbound
 	}
 
 	// Resolver
 	switch strings.ToLower(c.Resolver.Type) {
 	case "", "system":
-		if hasACL {
-			// If the user uses ACL, we must put a resolver in front of it,
+		if hasACL || hasUserRouting {
+			// If the user uses ACL or user routing, we must put a resolver in front of it,
 			// for IP rules to work on domain requests.
 			uOb = outbounds.NewSystemResolver(uOb)
 		}

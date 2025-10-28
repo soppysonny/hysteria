@@ -210,12 +210,12 @@ func (r *standardResolver) resolve(reqAddr *AddrEx) {
 	}
 }
 
-func (r *standardResolver) TCP(reqAddr *AddrEx) (net.Conn, error) {
+func (r *standardResolver) TCP(reqAddr *AddrEx, userID string) (net.Conn, error) {
 	r.resolve(reqAddr)
-	return r.Next.TCP(reqAddr)
+	return r.Next.TCP(reqAddr, userID)
 }
 
-func (r *standardResolver) UDP(reqAddr *AddrEx) (UDPConn, error) {
+func (r *standardResolver) UDP(reqAddr *AddrEx, userID string) (UDPConn, error) {
 	r.resolve(reqAddr)
-	return r.Next.UDP(reqAddr)
+	return r.Next.UDP(reqAddr, userID)
 }

@@ -30,12 +30,12 @@ func (r *systemResolver) resolve(reqAddr *AddrEx) {
 	reqAddr.ResolveInfo = info
 }
 
-func (r *systemResolver) TCP(reqAddr *AddrEx) (net.Conn, error) {
+func (r *systemResolver) TCP(reqAddr *AddrEx, userID string) (net.Conn, error) {
 	r.resolve(reqAddr)
-	return r.Next.TCP(reqAddr)
+	return r.Next.TCP(reqAddr, userID)
 }
 
-func (r *systemResolver) UDP(reqAddr *AddrEx) (UDPConn, error) {
+func (r *systemResolver) UDP(reqAddr *AddrEx, userID string) (UDPConn, error) {
 	r.resolve(reqAddr)
-	return r.Next.UDP(reqAddr)
+	return r.Next.UDP(reqAddr, userID)
 }

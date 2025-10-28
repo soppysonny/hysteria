@@ -157,7 +157,7 @@ func (o *socks5Outbound) request(conn net.Conn, req *socks5.Request) (*socks5.Re
 	return resp, nil
 }
 
-func (s *socks5Outbound) TCP(reqAddr *AddrEx) (net.Conn, error) {
+func (s *socks5Outbound) TCP(reqAddr *AddrEx, userID string) (net.Conn, error) {
 	conn, err := s.dialAndNegotiate()
 	if err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func (s *socks5Outbound) TCP(reqAddr *AddrEx) (net.Conn, error) {
 	return conn, nil
 }
 
-func (s *socks5Outbound) UDP(reqAddr *AddrEx) (UDPConn, error) {
+func (s *socks5Outbound) UDP(reqAddr *AddrEx, userID string) (UDPConn, error) {
 	conn, err := s.dialAndNegotiate()
 	if err != nil {
 		return nil, err

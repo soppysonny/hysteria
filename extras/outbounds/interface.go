@@ -20,9 +20,10 @@ import (
 // in that it uses an AddrEx struct for addresses instead of a string. Because of this
 // difference, we need a special PluggableOutboundAdapter to convert between the two
 // for use in Hysteria core config.
+// The userID parameter is the authenticated user ID, which can be used for user-based routing.
 type PluggableOutbound interface {
-	TCP(reqAddr *AddrEx) (net.Conn, error)
-	UDP(reqAddr *AddrEx) (UDPConn, error)
+	TCP(reqAddr *AddrEx, userID string) (net.Conn, error)
+	UDP(reqAddr *AddrEx, userID string) (UDPConn, error)
 }
 
 type UDPConn interface {
@@ -66,7 +67,7 @@ type PluggableOutboundAdapter struct {
 	PluggableOutbound
 }
 
-func (a *PluggableOutboundAdapter) TCP(reqAddr string) (net.Conn, error) {
+func (a *PluggableOutboundAdapter) TCP(reqAddr string, userID string) (net.Conn, error) {
 	host, port, err := net.SplitHostPort(reqAddr)
 	if err != nil {
 		return nil, err
@@ -78,10 +79,10 @@ func (a *PluggableOutboundAdapter) TCP(reqAddr string) (net.Conn, error) {
 	return a.PluggableOutbound.TCP(&AddrEx{
 		Host: host,
 		Port: uint16(portInt),
-	})
+	}, userID)
 }
 
-func (a *PluggableOutboundAdapter) UDP(reqAddr string) (server.UDPConn, error) {
+func (a *PluggableOutboundAdapter) UDP(reqAddr string, userID string) (server.UDPConn, error) {
 	host, port, err := net.SplitHostPort(reqAddr)
 	if err != nil {
 		return nil, err
@@ -93,7 +94,7 @@ func (a *PluggableOutboundAdapter) UDP(reqAddr string) (server.UDPConn, error) {
 	conn, err := a.PluggableOutbound.UDP(&AddrEx{
 		Host: host,
 		Port: uint16(portInt),
-	})
+	}, userID)
 	if err != nil {
 		return nil, err
 	}

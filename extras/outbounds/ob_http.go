@@ -110,7 +110,7 @@ func (o *httpOutbound) addrExToRequest(reqAddr *AddrEx) (*http.Request, error) {
 	return req, nil
 }
 
-func (o *httpOutbound) TCP(reqAddr *AddrEx) (net.Conn, error) {
+func (o *httpOutbound) TCP(reqAddr *AddrEx, userID string) (net.Conn, error) {
 	req, err := o.addrExToRequest(reqAddr)
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func (o *httpOutbound) TCP(reqAddr *AddrEx) (net.Conn, error) {
 	}
 }
 
-func (o *httpOutbound) UDP(reqAddr *AddrEx) (UDPConn, error) {
+func (o *httpOutbound) UDP(reqAddr *AddrEx, userID string) (UDPConn, error) {
 	return nil, errHTTPUDPNotSupported
 }
 
