@@ -1,0 +1,57 @@
+# Hysteria Server Configuration Example - User-based Routing
+# This example demonstrates how to route different users to different outbounds
+
+listen: :443
+
+tls:
+  cert: /path/to/cert.pem
+  key: /path/to/key.pem
+
+auth:
+  type: userpass
+  userpass:
+    alice: password123
+    bob: password456
+    charlie: password789
+
+# Define multiple outbounds with bindUser field
+outbounds:
+  # Alice's dedicated proxy - only alice will use this
+  - name: alice-proxy
+    type: direct
+    bindUser: alice
+    direct:
+      mode: auto
+
+  # Bob's SOCKS5 proxy - only bob will use this
+  - name: bob-proxy
+    type: socks5
+    bindUser: bob
+    socks5:
+      addr: 127.0.0.1:1080
+      username: bob_socks
+      password: socks_pass
+
+  # Default outbound for all other users (charlie and any others)
+  - name: default
+    type: direct
+    direct:
+      mode: auto
+
+# Optional: ACL rules can still be applied
+# ACL works independently - each user's outbound will respect these rules
+# acl:
+#   inline:
+#     - reject(geoip:private)
+#     - direct(all)
+
+# Bandwidth limits (optional)
+bandwidth:
+  up: 1 gbps
+  down: 1 gbps
+
+# How it works:
+# 1. When alice connects, her traffic goes through "alice-proxy" (direct)
+# 2. When bob connects, his traffic goes through "bob-proxy" (socks5)
+# 3. When charlie connects, his traffic goes through "default" (direct)
+# 4. If ACL is configured, rules apply after user selection
